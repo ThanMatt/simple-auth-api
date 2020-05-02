@@ -1,22 +1,35 @@
 import express from 'express'
-import cors from 'cors'
 import mongoose from 'mongoose'
+import "reflect-metadata"
+import { ApolloServer } from 'apollo-server-express'
+import { buildSchema } from 'type-graphql'
+import { UserResolver } from './graphql/resolvers/UserResolver'
+(async () => {
+  const app = express()
 
-const app = express()
+  app.use(express.urlencoded({ extended: false }))
 
-app.use(express.urlencoded({ extended: false }))
+  mongoose.connect(process.env.MONGO_URL || 'mongodb://db:27017/mauch_bot', {
+    useNewUrlParser: true,
+    useFindAndModify: false,
+    reconnectTries: 30,
+    reconnectInterval: 500
+  })
 
-app.use(cors())
+  mongoose.connection.once('open', () => {
+    console.log('MongoDB connection: success')
+  })
 
-mongoose.connect(process.env.MONGO_URL || 'mongodb://db:27017/mauch_bot', {
-  useNewUrlParser: true,
-  useFindAndModify: false,
-  reconnectTries: 30,
-  reconnectInterval: 500
-})
+  const apolloServer = new ApolloServer({
+    schema: await buildSchema({
+      resolvers: [UserResolver]
+    }),
+    context: ({ req, res }) => ({ req, res })
+  })
 
-mongoose.connection.once('open', () => {
-  console.log('MongoDB connection: success')
-})
+  apolloServer.applyMiddleware({ app, cors: false })
 
-console.log('boo')
+  app.listen(4000, () => {
+    console.log('Express server started')
+  })
+})()
