@@ -1,20 +1,64 @@
-import { Resolver, Mutation, Arg, Query } from 'type-graphql'
-import bcrypt from 'bcrypt'
-import User from '../../models/User'
+import { Resolver, Mutation, Arg, Query, InputType, Field } from 'type-graphql'
+import { User, UserModel } from '../../models/User'
+import bcrypt from 'bcryptjs'
 
+@InputType()
+class SignupInput {
+  @Field()
+  email: string
+
+  @Field()
+  password: string
+}
+
+@InputType()
+class LoginInput {
+  @Field()
+  email: string
+
+  @Field()
+  password: string
+}
 @Resolver()
 export class UserResolver {
   @Query(() => String)
   hello() {
     return 'hi'
   }
+
   @Mutation(() => Boolean)
   async signUpUser(
-    @Arg('email') email: string,
-    @Arg('password') password: string
+    @Arg('SignupInput', () => SignupInput) { email, password }: SignupInput
   ) {
-    const hashedPassword = await bcrypt.hash(password, '10')
-    await User.create({ email, password: hashedPassword })
-    return true
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10)
+      await UserModel.create({ email, password: hashedPassword })
+      return true
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
+  }
+
+  @Mutation(() => User)
+  async loginUser(
+    @Arg('LoginInput', () => LoginInput) { email, password }: LoginInput
+  ) {
+    try {
+      const user = await UserModel.findOne({ email })
+
+      if (user) {
+        const comparePassword = await bcrypt.compare(password, user.password)
+
+        if (comparePassword) {
+          return user
+        }
+
+        return false
+      }
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
   }
 }

@@ -1,4 +1,5 @@
 import express from 'express'
+import path from 'path'
 import mongoose from 'mongoose'
 import 'reflect-metadata'
 import { ApolloServer } from 'apollo-server-express'
@@ -23,7 +24,8 @@ import { UserResolver } from './graphql/resolvers/UserResolver'
 
     const apolloServer = new ApolloServer({
       schema: await buildSchema({
-        resolvers: [UserResolver]
+        resolvers: [UserResolver],
+        emitSchemaFile: path.resolve(__dirname, 'graphql/schema.gql')
       }),
       context: ({ req, res }) => ({ req, res })
     })
