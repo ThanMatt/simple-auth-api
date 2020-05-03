@@ -10,6 +10,14 @@ services:
     depends_on:
       - db
 
+  mailer:
+    image: auth_mailer:1
+    volumes:
+      - ../auth-mailer:/usr/src/services/mailer
+    ports:
+      - 5000:5000
+    command: yarn run start:dev
+
   db:
     image: mongo:4.0-xenial
     command: mongod --smallfiles --quiet
